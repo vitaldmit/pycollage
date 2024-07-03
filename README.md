@@ -11,8 +11,8 @@
 python -m venv test
 cd test && . bin/activate && mkdir src && cd src
 git clone https://github.com/vitaldmit/test_mycego.git .
-pip install requirements.txt
-mv secret_example.py secret.py # Insert your own token
+pip install -r requirements.txt
+cp secret_example.py secret.py # Insert your own token
 ```
 
 Запуск скрипта
