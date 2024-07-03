@@ -60,25 +60,17 @@ async def main():
             print("Токен недействителен")
             return
 
-        # Функция просмотра содержимого
-        async def list_files(folder_path):
-            try:
-                print(f"Содержимое папки {folder_path}:")
-                async for item in await client.listdir(folder_path):
-                    print(f" - {item.name} ({'(папка)' if item.type == 'dir' else '(файл)'})")
-            except yadisk.exceptions.YaDiskError as e:
-                print(f"Ошибка при получении списка файлов: {e}")
-
         # Функция скачивания файлов
         async def download_file(remote_path, local_path):
-                # Создаем аналогичну директорию для скачивания файлов
+                # Создаем аналогичную локальную директорию для загрузки файлов
                 await aiofiles.os.makedirs(local_path, exist_ok=True)
                 try:
-                    async for file in await client.listdir(remote_path):
-                        # print(f"{remote_path}{file.name}")
-                        # print(f"{local_path}{file.name}")
-                        await client.download(f"{remote_path}{file.name}", f"{local_path}{file.name}")
-                        print(f"Файл '{remote_path}{file.name}' успешно скачан")
+                    # Cоздаем задачи
+                    tasks = [asyncio.create_task(client.download(f"{remote_path}{file.name}", f"{local_path}{file.name}"))
+                                                 async for file in await client.listdir(remote_path)]
+                    for future in asyncio.as_completed(tasks):
+                        # получаем результаты по готовности 
+                        await future
                 except yadisk.exceptions.YaDiskError as e:
                     print(f"Ошибка при скачивании файла: {e}")
 
