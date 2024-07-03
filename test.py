@@ -6,8 +6,6 @@ import yadisk
 from PIL import Image
 from secret import YA_TOKEN
 
-# Яндекс токен. (Необходим получить)
-client: str = yadisk.AsyncClient(token=YA_TOKEN)
 # Родительская директория где находятся списки с папками
 root_folder: str = "Для тестового"
 # Список с папками изображения в которых нехобходимо перевести в коллаж
@@ -16,29 +14,6 @@ folder_list: list[str] =  ['1388_12_Наклейки 3-D_3', '1369_12_Накле
 columns: int = 4
 # Отступ между изображениями в пикселях
 padding: int = 100
-
-
-# Функция просмотра содержимого
-async def list_files(folder_path):
-    try:
-        print(f"Содержимое папки {folder_path}:")
-        async for item in await client.listdir(folder_path):
-            print(f" - {item.name} ({'(папка)' if item.type == 'dir' else '(файл)'})")
-    except yadisk.exceptions.YaDiskError as e:
-        print(f"Ошибка при получении списка файлов: {e}")
-
-# Функция скачивания файлов
-async def download_file(remote_path, local_path):
-        # Создаем аналогичну директорию для скачивания файлов
-        await aiofiles.os.makedirs(local_path, exist_ok=True)
-        try:
-            async for file in await client.listdir(remote_path):
-                # print(f"{remote_path}{file.name}")
-                # print(f"{local_path}{file.name}")
-                await client.download(f"{remote_path}{file.name}", f"{local_path}{file.name}")
-                print(f"Файл '{remote_path}{file.name}' успешно скачан")
-        except yadisk.exceptions.YaDiskError as e:
-            print(f"Ошибка при скачивании файла: {e}")
 
 # Функция создания коллажа
 def create_collage(input_folder, output_file, cols=2, padding=10):
@@ -76,14 +51,36 @@ def create_collage(input_folder, output_file, cols=2, padding=10):
     print(f"Создан коллаж в TIFF файле: {output_file}")
 
 # Основная функция
-async def main(client):
-    async with client:
+async def main():
+    async with yadisk.AsyncClient(token=YA_TOKEN, session="aiohttp") as client:
         # Проверяем, валиден ли токен
         if await client.check_token():
             print("Токен действителен")
         else:
             print("Токен недействителен")
             return
+
+        # Функция просмотра содержимого
+        async def list_files(folder_path):
+            try:
+                print(f"Содержимое папки {folder_path}:")
+                async for item in await client.listdir(folder_path):
+                    print(f" - {item.name} ({'(папка)' if item.type == 'dir' else '(файл)'})")
+            except yadisk.exceptions.YaDiskError as e:
+                print(f"Ошибка при получении списка файлов: {e}")
+
+        # Функция скачивания файлов
+        async def download_file(remote_path, local_path):
+                # Создаем аналогичну директорию для скачивания файлов
+                await aiofiles.os.makedirs(local_path, exist_ok=True)
+                try:
+                    async for file in await client.listdir(remote_path):
+                        # print(f"{remote_path}{file.name}")
+                        # print(f"{local_path}{file.name}")
+                        await client.download(f"{remote_path}{file.name}", f"{local_path}{file.name}")
+                        print(f"Файл '{remote_path}{file.name}' успешно скачан")
+                except yadisk.exceptions.YaDiskError as e:
+                    print(f"Ошибка при скачивании файла: {e}")
 
         # Получаем общую информацию о диске
         # print(await client.get_disk_info())
@@ -104,7 +101,7 @@ async def main(client):
 if __name__ == '__main__':
     start: float = time.time()
 
-    asyncio.run(main(client=client))
+    asyncio.run(main())
     
     total: float = time.time() - start
     print(f'Общее время выполнения: {total:.3f} сек.')
